@@ -44,8 +44,19 @@ export const generateImageVariation = async (
   try {
     const ai = getAIInstance();
     
-    // Map resolution to imageSize parameter for API (using calculated dimensions)
-    const imageSizeString = `${targetDimensions.width}x${targetDimensions.height}`;
+    // Map aspect ratio to API format
+    const aspectRatio = is16x9 ? "16:9" : "1:1";
+    
+    // Map resolution to API format (1K, 2K, 4K)
+    const imageSize = resolution; // Already in correct format
+    
+    // Log API request for debugging
+    console.log('API Request:', {
+      model: MODEL_NAME,
+      aspectRatio,
+      imageSize,
+      targetDimensions
+    });
     
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -58,28 +69,71 @@ export const generateImageVariation = async (
             },
           },
           {
-            text: `Generate a new photorealistic image of this scene from a ${angleDescription}. Keep the subject matter, lighting, and style consistent with the original. Return ONLY the image at ${imageSizeString} resolution.`,
+            text: `Generate a new photorealistic image of this scene from a ${angleDescription}. Keep the subject matter, lighting, and style consistent with the original. Return ONLY the image.`,
           },
         ],
       },
       generationConfig: {
-        imageSize: imageSizeString,
-      } as any, // Type assertion needed as the SDK types may not include imageSize
+        aspect_ratio: aspectRatio,
+        image_size: imageSize,
+      } as any, // Type assertion needed as the SDK types may not include these parameters
     });
 
     // Extract image from response
     let generatedImage: string | null = null;
+    
+    // Log response structure for debugging
+    console.log('API Response structure:', {
+      hasCandidates: !!response.candidates,
+      candidatesLength: response.candidates?.length,
+      firstCandidate: response.candidates?.[0] ? {
+        finishReason: response.candidates[0].finishReason,
+        hasContent: !!response.candidates[0].content,
+        partsCount: response.candidates[0].content?.parts?.length,
+        partsTypes: response.candidates[0].content?.parts?.map((p: any) => Object.keys(p)),
+        safetyRatings: response.candidates[0].safetyRatings
+      } : null
+    });
+    
+    // Check for errors in response
+    if (response.candidates?.[0]?.finishReason) {
+      const finishReason = response.candidates[0].finishReason;
+      if (finishReason !== 'STOP' && finishReason !== 'MAX_TOKENS') {
+        console.error('Finish reason:', finishReason);
+        throw new Error(`Generation failed: ${finishReason}`);
+      }
+    }
+    
+    // Check for safety ratings that might block the response
+    if (response.candidates?.[0]?.safetyRatings) {
+      const safetyRatings = response.candidates[0].safetyRatings;
+      const blocked = safetyRatings.some((rating: any) => 
+        rating.probability === 'HIGH' || rating.probability === 'MEDIUM'
+      );
+      if (blocked) {
+        console.error('Content blocked by safety filter:', safetyRatings);
+        throw new Error('Content was blocked by safety filters');
+      }
+    }
+    
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
+        // Check for inlineData with image
         if (part.inlineData && part.inlineData.data) {
             generatedImage = `data:image/png;base64,${part.inlineData.data}`;
             break;
+        }
+        // Check for text that might indicate an error
+        if (part.text) {
+          console.warn('Text response received:', part.text);
         }
       }
     }
     
     if (!generatedImage) {
-      throw new Error("No image generated in response");
+      // Log the full response structure for debugging
+      console.error('No image found in response. Full response:', response);
+      throw new Error("No image generated in response. The API may have returned text or an error instead.");
     }
     
     // Resize image to requested resolution if API didn't respect it
@@ -121,8 +175,11 @@ export const editImageWithPrompt = async (
   try {
     const ai = getAIInstance();
     
-    // Map resolution to imageSize parameter for API (using calculated dimensions)
-    const imageSizeString = `${targetDimensions.width}x${targetDimensions.height}`;
+    // Map aspect ratio to API format
+    const aspectRatio = is16x9 ? "16:9" : "1:1";
+    
+    // Map resolution to API format (1K, 2K, 4K)
+    const imageSize = resolution; // Already in correct format
     
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
@@ -135,27 +192,57 @@ export const editImageWithPrompt = async (
             },
           },
           {
-            text: `Edit this image: ${prompt}. Maintain high quality and realism. Return the image at ${imageSizeString} resolution.`,
+            text: `Edit this image: ${prompt}. Maintain high quality and realism.`,
           },
         ],
       },
       generationConfig: {
-        imageSize: imageSizeString,
-      } as any, // Type assertion needed as the SDK types may not include imageSize
+        aspect_ratio: aspectRatio,
+        image_size: imageSize,
+      } as any, // Type assertion needed as the SDK types may not include these parameters
     });
 
     let generatedImage: string | null = null;
+    
+    // Check for errors in response
+    if (response.candidates?.[0]?.finishReason) {
+      const finishReason = response.candidates[0].finishReason;
+      if (finishReason !== 'STOP' && finishReason !== 'MAX_TOKENS') {
+        console.error('Finish reason:', finishReason);
+        throw new Error(`Edit failed: ${finishReason}`);
+      }
+    }
+    
+    // Check for safety ratings that might block the response
+    if (response.candidates?.[0]?.safetyRatings) {
+      const safetyRatings = response.candidates[0].safetyRatings;
+      const blocked = safetyRatings.some((rating: any) => 
+        rating.probability === 'HIGH' || rating.probability === 'MEDIUM'
+      );
+      if (blocked) {
+        console.error('Content blocked by safety filter:', safetyRatings);
+        throw new Error('Content was blocked by safety filters');
+      }
+    }
+    
     if (response.candidates?.[0]?.content?.parts) {
       for (const part of response.candidates[0].content.parts) {
+        // Check for inlineData with image
         if (part.inlineData && part.inlineData.data) {
             generatedImage = `data:image/png;base64,${part.inlineData.data}`;
             break;
+        }
+        // Check for text that might indicate an error
+        if (part.text) {
+          console.warn('Text response received:', part.text);
         }
       }
     }
     
     if (!generatedImage) {
-      throw new Error("No image generated in response");
+      // Log the full response structure for debugging
+      console.error('No image found in response. Full response:', response);
+      throw new Error("No image generated in response. The API may have returned text or an error instead.");
     }
     
     // Resize image to requested resolution if API didn't respect it
