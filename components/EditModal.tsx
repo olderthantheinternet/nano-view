@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '../src/components/ui/button';
 import { editImageWithPrompt } from '../services/geminiService';
+import { ImageResolution } from '../types';
 
 interface EditModalProps {
   imageUrl: string;
   onClose: () => void;
   onSave: (newUrl: string) => void;
+  resolution?: ImageResolution;
 }
 
-export const EditModal: React.FC<EditModalProps> = ({ imageUrl, onClose, onSave }) => {
+export const EditModal: React.FC<EditModalProps> = ({ imageUrl, onClose, onSave, resolution = '1K' }) => {
   const [prompt, setPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentImage, setCurrentImage] = useState(imageUrl);
@@ -19,7 +21,7 @@ export const EditModal: React.FC<EditModalProps> = ({ imageUrl, onClose, onSave 
     setIsProcessing(true);
     setError(null);
     try {
-      const newImage = await editImageWithPrompt(currentImage, prompt);
+      const newImage = await editImageWithPrompt(currentImage, prompt, resolution);
       setCurrentImage(newImage);
       setPrompt(''); // Clear prompt after success
     } catch (err) {

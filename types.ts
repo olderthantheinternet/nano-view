@@ -11,6 +11,21 @@ export interface GenerationConfig {
   description: string;
 }
 
+export type ImageResolution = '1K' | '2K' | '4K';
+
+export interface ResolutionOption {
+  value: ImageResolution;
+  label: string;
+  width: number;
+  height: number;
+}
+
+export const RESOLUTION_OPTIONS: ResolutionOption[] = [
+  { value: '1K', label: '1K (1024×1024)', width: 1024, height: 1024 },
+  { value: '2K', label: '2K (2048×2048)', width: 2048, height: 2048 },
+  { value: '4K', label: '4K (4096×4096)', width: 4096, height: 4096 },
+];
+
 export const ANGLES: GenerationConfig[] = [
   { angle: "Isometric", description: "isometric view from top-right corner" },
   { angle: "Bird's Eye", description: "direct top-down bird's eye view" },

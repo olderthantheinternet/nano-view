@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 import { getApiKeyCookie } from "../src/utils/cookieUtils";
+import { ImageResolution, RESOLUTION_OPTIONS } from "../types";
 
 const MODEL_NAME = 'gemini-2.5-flash-image';
 
@@ -21,10 +22,14 @@ function getAIInstance(): GoogleGenAI {
  */
 export const generateImageVariation = async (
   base64Image: string,
-  angleDescription: string
+  angleDescription: string,
+  resolution: ImageResolution = '1K'
 ): Promise<string> => {
   // Remove header if present for sending to API (though inlineData usually handles it, cleaner to be sure)
   const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+
+  // Get resolution dimensions
+  const resolutionOption = RESOLUTION_OPTIONS.find(opt => opt.value === resolution) || RESOLUTION_OPTIONS[0];
 
   try {
     const ai = getAIInstance();
@@ -42,6 +47,10 @@ export const generateImageVariation = async (
             text: `Generate a new photorealistic image of this scene from a ${angleDescription}. Keep the subject matter, lighting, and style consistent with the original. Return ONLY the image.`,
           },
         ],
+      },
+      generationConfig: {
+        width: resolutionOption.width,
+        height: resolutionOption.height,
       },
     });
 
@@ -66,9 +75,13 @@ export const generateImageVariation = async (
  */
 export const editImageWithPrompt = async (
   base64Image: string,
-  prompt: string
+  prompt: string,
+  resolution: ImageResolution = '1K'
 ): Promise<string> => {
    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+
+  // Get resolution dimensions
+  const resolutionOption = RESOLUTION_OPTIONS.find(opt => opt.value === resolution) || RESOLUTION_OPTIONS[0];
 
   try {
     const ai = getAIInstance();
@@ -86,6 +99,10 @@ export const editImageWithPrompt = async (
             text: `Edit this image: ${prompt}. Maintain high quality and realism.`,
           },
         ],
+      },
+      generationConfig: {
+        width: resolutionOption.width,
+        height: resolutionOption.height,
       },
     });
 

@@ -3,8 +3,9 @@ import { Uploader } from './components/Uploader';
 import { Button } from './src/components/ui/button';
 import { EditModal } from './components/EditModal';
 import { ApiKeyModal } from './components/ApiKeyModal';
+import { ResolutionSelector } from './components/ResolutionSelector';
 import { generateImageVariation } from './services/geminiService';
-import { ANGLES, GeneratedImage } from './types';
+import { ANGLES, GeneratedImage, ImageResolution } from './types';
 import { hasApiKeyCookie } from './src/utils/cookieUtils';
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [resolution, setResolution] = useState<ImageResolution>('1K');
 
   // Check for API key on mount
   useEffect(() => {
@@ -61,7 +63,7 @@ export default function App() {
     // Note: We use Promise.allSettled to allow some to fail without crashing the whole set
     const promises = ANGLES.map(async (angleConfig, index) => {
         try {
-            const resultUrl = await generateImageVariation(originalImage, angleConfig.description);
+            const resultUrl = await generateImageVariation(originalImage, angleConfig.description, resolution);
             
             setVariations(prev => prev.map((item, i) => 
                 i === index ? { ...item, url: resultUrl, status: 'success' } : item
@@ -76,7 +78,7 @@ export default function App() {
 
     await Promise.allSettled(promises);
     setIsGenerating(false);
-  }, [originalImage, hasApiKey]);
+  }, [originalImage, hasApiKey, resolution]);
 
   // Handle updating an image after editing
   const handleEditSave = (newUrl: string) => {
@@ -102,7 +104,7 @@ export default function App() {
           i === index ? { ...item, status: 'loading' } : item
       ));
 
-      generateImageVariation(originalImage, angleConfig.description)
+      generateImageVariation(originalImage, angleConfig.description, resolution)
         .then(url => {
             setVariations(prev => prev.map((item, i) => 
                 i === index ? { ...item, url, status: 'success' } : item
@@ -143,6 +145,11 @@ export default function App() {
                             <span className="text-white font-medium">Original Scene</span>
                         </div>
                     </div>
+                    <ResolutionSelector
+                        value={resolution}
+                        onChange={setResolution}
+                        disabled={isGenerating}
+                    />
                     <div className="flex gap-2">
                          <Button 
                             onClick={startGeneration} 
@@ -265,6 +272,7 @@ export default function App() {
             imageUrl={selectedImageForEdit.url} 
             onClose={() => setSelectedImageForEdit(null)}
             onSave={handleEditSave}
+            resolution={resolution}
         />
       )}
 
