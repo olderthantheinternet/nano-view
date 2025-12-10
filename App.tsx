@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Uploader } from './components/Uploader';
-import { Button } from './components/Button';
+import { Button } from './src/components/ui/button';
 import { EditModal } from './components/EditModal';
+import { ApiKeyModal } from './components/ApiKeyModal';
 import { generateImageVariation } from './services/geminiService';
 import { ANGLES, GeneratedImage } from './types';
+import { hasApiKeyCookie } from './src/utils/cookieUtils';
 
 export default function App() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -11,6 +13,21 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedImageForEdit, setSelectedImageForEdit] = useState<GeneratedImage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showApiKeyModal, setShowApiKeyModal] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(false);
+
+  // Check for API key on mount
+  useEffect(() => {
+    const apiKeyExists = hasApiKeyCookie();
+    setHasApiKey(apiKeyExists);
+    setShowApiKeyModal(!apiKeyExists);
+  }, []);
+
+  // Handle API key being set
+  const handleApiKeySet = (apiKey: string) => {
+    setHasApiKey(true);
+    setShowApiKeyModal(false);
+  };
 
   // Handle uploading the initial image
   const handleImageSelect = (base64: string) => {
@@ -22,6 +39,10 @@ export default function App() {
   // Trigger the 9-angle generation process
   const startGeneration = useCallback(async () => {
     if (!originalImage) return;
+    if (!hasApiKey) {
+      setShowApiKeyModal(true);
+      return;
+    }
 
     setIsGenerating(true);
     setError(null);
@@ -55,7 +76,7 @@ export default function App() {
 
     await Promise.allSettled(promises);
     setIsGenerating(false);
-  }, [originalImage]);
+  }, [originalImage, hasApiKey]);
 
   // Handle updating an image after editing
   const handleEditSave = (newUrl: string) => {
@@ -246,6 +267,11 @@ export default function App() {
             onSave={handleEditSave}
         />
       )}
+
+      <ApiKeyModal 
+        open={showApiKeyModal}
+        onApiKeySet={handleApiKeySet}
+      />
     </div>
   );
 }

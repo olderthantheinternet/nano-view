@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from './Button';
+import { Button } from '../src/components/ui/button';
 import { editImageWithPrompt } from '../services/geminiService';
 
 interface EditModalProps {

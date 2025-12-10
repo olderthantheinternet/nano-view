@@ -1,8 +1,20 @@
 import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+import { getApiKeyCookie } from "../src/utils/cookieUtils";
 
 const MODEL_NAME = 'gemini-2.5-flash-image';
+
+/**
+ * Get the GoogleGenAI instance with API key from cookie
+ */
+function getAIInstance(): GoogleGenAI {
+  const apiKey = getApiKeyCookie();
+  
+  if (!apiKey) {
+    throw new Error("API key not found. Please set your Gemini API key.");
+  }
+  
+  return new GoogleGenAI({ apiKey });
+}
 
 /**
  * Generates a variation of an image based on a specific angle/prompt.
@@ -15,6 +27,7 @@ export const generateImageVariation = async (
   const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
   try {
+    const ai = getAIInstance();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
@@ -58,6 +71,7 @@ export const editImageWithPrompt = async (
    const cleanBase64 = base64Image.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
 
   try {
+    const ai = getAIInstance();
     const response = await ai.models.generateContent({
       model: MODEL_NAME,
       contents: {
