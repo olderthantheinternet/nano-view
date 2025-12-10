@@ -8,6 +8,7 @@ import { generateImageVariation } from './services/geminiService';
 import { ANGLES, GeneratedImage, ImageResolution } from './types';
 import { hasApiKeyCookie } from './src/utils/cookieUtils';
 import { downloadImagesAsZip } from './src/utils/downloadUtils';
+import { getImageDimensions } from './src/utils/imageUtils';
 
 export default function App() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export default function App() {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [resolution, setResolution] = useState<ImageResolution>('1K');
   const [isDownloading, setIsDownloading] = useState(false);
+  const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
 
   // Check for API key on mount
   useEffect(() => {
@@ -34,10 +36,21 @@ export default function App() {
   };
 
   // Handle uploading the initial image
-  const handleImageSelect = (base64: string) => {
+  const handleImageSelect = async (base64: string) => {
     setOriginalImage(base64);
     setVariations([]);
     setError(null);
+    
+    // Detect and store aspect ratio of uploaded image
+    try {
+      const { width, height } = await getImageDimensions(base64);
+      const aspectRatio = width / height;
+      setImageAspectRatio(aspectRatio);
+    } catch (error) {
+      console.error('Failed to get image dimensions:', error);
+      // Default to square if detection fails
+      setImageAspectRatio(1);
+    }
   };
 
   // Trigger the 9-angle generation process
@@ -235,10 +248,39 @@ export default function App() {
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {variations.map((item, index) => (
+                            {variations.map((item, index) => {
+                                // Determine aspect ratio class or style based on original image
+                                const getAspectRatioStyle = () => {
+                                  if (!imageAspectRatio) {
+                                    return { className: 'aspect-square' };
+                                  }
+                                  
+                                  // Check if it's approximately 16:9 (within 0.1 tolerance)
+                                  const is16x9 = Math.abs(imageAspectRatio - 16/9) < 0.1;
+                                  // Check if it's approximately 1:1 (square)
+                                  const isSquare = Math.abs(imageAspectRatio - 1) < 0.1;
+                                  
+                                  if (is16x9) {
+                                    return { className: 'aspect-video' };
+                                  } else if (isSquare) {
+                                    return { className: 'aspect-square' };
+                                  } else {
+                                    // Use inline style for custom aspect ratios
+                                    const paddingBottom = (1 / imageAspectRatio) * 100;
+                                    return { 
+                                      className: 'relative',
+                                      style: { paddingBottom: `${paddingBottom}%` }
+                                    };
+                                  }
+                                };
+                                
+                                const aspectStyle = getAspectRatioStyle();
+                                
+                                return (
                                 <div 
                                     key={item.id} 
-                                    className="relative aspect-square bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 group"
+                                    className={`relative bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 group ${aspectStyle.className}`}
+                                    style={aspectStyle.style}
                                 >
                                     {/* Status: Loading */}
                                     {item.status === 'loading' && (
@@ -256,7 +298,7 @@ export default function App() {
                                             <img 
                                                 src={item.url} 
                                                 alt={item.prompt} 
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             />
                                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 p-4 text-center backdrop-blur-sm cursor-pointer"
                                                  onClick={() => setSelectedImageForEdit(item)}
@@ -285,7 +327,8 @@ export default function App() {
                                         </div>
                                     )}
                                 </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     )}
                     
