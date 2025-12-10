@@ -155,7 +155,7 @@ export default function App() {
                 </div>
                 <h1 className="text-xl font-bold tracking-tight text-white">Nano Banana Studio</h1>
             </div>
-            <div className="text-sm text-zinc-500">Gemini 2.5 Flash Image</div>
+            <div className="text-sm text-zinc-500">Gemini 3 Pro Preview</div>
         </div>
       </header>
 

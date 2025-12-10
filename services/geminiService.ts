@@ -8,7 +8,7 @@ import {
 } from "../src/utils/imageUtils";
 import { ImageResolution } from "../types";
 
-const MODEL_NAME = 'gemini-2.5-flash-image';
+const MODEL_NAME = 'gemini-3-pro-preview';
 
 /**
  * Get the GoogleGenAI instance with API key from cookie

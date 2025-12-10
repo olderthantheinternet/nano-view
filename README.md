@@ -4,7 +4,7 @@
 
 # Nano Banana Studio
 
-A browser-based application for generating 9 unique image perspectives from a single image using Google's Gemini 2.5 Flash Image model. Edit images with natural language prompts.
+A browser-based application for generating 9 unique image perspectives from a single image using Google's Gemini 3 Pro Preview model. Edit images with natural language prompts.
 
 ## Features
 
@@ -55,7 +55,7 @@ Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
 - **Framework**: React 19 with TypeScript
 - **Build Tool**: Vite 6
 - **UI Components**: shadcn/ui (Radix UI + Tailwind CSS)
-- **AI Model**: Gemini 2.5 Flash Image
+- **AI Model**: Gemini 3 Pro Preview
 - **Styling**: Tailwind CSS with PostCSS
 
 ## Pushing to a New GitHub Repository
