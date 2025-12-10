@@ -1,5 +1,6 @@
 import React from 'react';
-import { ImageResolution, RESOLUTION_OPTIONS } from '../types';
+import { ImageResolution, RESOLUTION_OPTIONS, NUM_IMAGES_TO_GENERATE } from '../types';
+import { calculateGenerationCost, formatCost, getCostPerImage } from '../src/utils/costUtils';
 
 interface ResolutionSelectorProps {
   value: ImageResolution;
@@ -29,9 +30,22 @@ export const ResolutionSelector: React.FC<ResolutionSelectorProps> = ({
           </option>
         ))}
       </select>
-      <p className="text-xs text-zinc-500">
-        Higher resolution = better quality but slower generation
-      </p>
+      <div className="space-y-1">
+        <p className="text-xs text-zinc-500">
+          Higher resolution = better quality but slower generation
+        </p>
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-zinc-400">
+            Estimated cost:
+          </span>
+          <span className="text-yellow-400 font-medium">
+            {formatCost(calculateGenerationCost(value))} for {NUM_IMAGES_TO_GENERATE} images
+          </span>
+        </div>
+        <p className="text-xs text-zinc-600">
+          ({formatCost(getCostPerImage(value))} per image)
+        </p>
+      </div>
     </div>
   );
 };

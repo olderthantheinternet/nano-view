@@ -26,6 +26,18 @@ export const RESOLUTION_OPTIONS: ResolutionOption[] = [
   { value: '4K', label: '4K (4096×4096)', width: 4096, height: 4096 },
 ];
 
+export interface PricingConfig {
+  costPerImage: number; // Cost in USD per image
+}
+
+export const RESOLUTION_PRICING: Record<ImageResolution, PricingConfig> = {
+  '1K': { costPerImage: 0.0387 }, // ~1,290 tokens at $30 per 1M tokens
+  '2K': { costPerImage: 0.0387 }, // ~1,290 tokens at $30 per 1M tokens
+  '4K': { costPerImage: 0.06 },   // ~2,000 tokens at $30 per 1M tokens
+};
+
+export const NUM_IMAGES_TO_GENERATE = 9;
+
 export const ANGLES: GenerationConfig[] = [
   { angle: "Isometric", description: "isometric view from top-right corner" },
   { angle: "Bird's Eye", description: "direct top-down bird's eye view" },
