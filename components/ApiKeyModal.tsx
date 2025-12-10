@@ -92,7 +92,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ open, onApiKeySet }) =
               <Input
                 id="api-key"
                 type="password"
-                placeholder="AIza..."
+                placeholder="your API key"
                 value={apiKey}
                 onChange={(e) => {
                   setApiKey(e.target.value);
