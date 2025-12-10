@@ -7,6 +7,7 @@ import { ResolutionSelector } from './components/ResolutionSelector';
 import { generateImageVariation } from './services/geminiService';
 import { ANGLES, GeneratedImage, ImageResolution } from './types';
 import { hasApiKeyCookie } from './src/utils/cookieUtils';
+import { downloadImagesAsZip } from './src/utils/downloadUtils';
 
 export default function App() {
   const [originalImage, setOriginalImage] = useState<string | null>(null);
@@ -17,6 +18,7 @@ export default function App() {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [resolution, setResolution] = useState<ImageResolution>('1K');
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Check for API key on mount
   useEffect(() => {
@@ -116,6 +118,30 @@ export default function App() {
             ));
         });
   };
+
+  const handleDownloadAll = async () => {
+    const successfulImages = variations.filter(img => img.status === 'success' && img.url);
+    
+    if (successfulImages.length === 0) {
+      setError('No images available to download');
+      return;
+    }
+
+    setIsDownloading(true);
+    setError(null);
+
+    try {
+      await downloadImagesAsZip(variations);
+    } catch (err) {
+      console.error('Download error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to download images. Please try again.');
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  // Check if there are any successful images
+  const hasSuccessfulImages = variations.some(img => img.status === 'success' && img.url);
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-200 selection:bg-yellow-500/30">
@@ -260,6 +286,20 @@ export default function App() {
                                     )}
                                 </div>
                             ))}
+                        </div>
+                    )}
+                    
+                    {/* Download All Button */}
+                    {variations.length > 0 && (
+                        <div className="mt-6 flex justify-center">
+                            <Button
+                                onClick={handleDownloadAll}
+                                disabled={!hasSuccessfulImages || isGenerating || isDownloading}
+                                isLoading={isDownloading}
+                                className="bg-yellow-500 hover:bg-yellow-600 text-zinc-950 font-semibold px-8 py-3"
+                            >
+                                {isDownloading ? 'Creating ZIP...' : 'Download All Images as ZIP'}
+                            </Button>
                         </div>
                     )}
                 </div>
