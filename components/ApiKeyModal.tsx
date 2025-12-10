@@ -9,7 +9,7 @@ import {
 } from '../src/components/ui/dialog';
 import { Input } from '../src/components/ui/input';
 import { Button } from '../src/components/ui/button';
-import { setApiKeyCookie } from '../src/utils/cookieUtils';
+import { setApiKeyCookie, getApiKeyCookie } from '../src/utils/cookieUtils';
 
 interface ApiKeyModalProps {
   open: boolean;
@@ -20,6 +20,16 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ open, onApiKeySet }) =
   const [apiKey, setApiKey] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load API key from cookie when modal opens
+  useEffect(() => {
+    if (open) {
+      const storedApiKey = getApiKeyCookie();
+      if (storedApiKey) {
+        setApiKey(storedApiKey);
+      }
+    }
+  }, [open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
